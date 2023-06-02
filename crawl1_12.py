@@ -85,6 +85,9 @@ class Extract_link_page:
 # t1.Extract(n_auto_saving=50 ,show_duplicate=True,show_page=True,show_time=True,random_request=True,return_links=True,)
 
 # %%
+
+
+# %%
 class Extract_informations:
    
       def __init__(self,links):
@@ -237,9 +240,6 @@ class Extract_informations:
                if auto_end:
                   end = start+1000
                
-               
-               # df=pd.DataFrame()
-               del_pre=False
                if show_time: t=time.time() ; t1=time.time()   
                for url in range(start,end):
                   if n_pre_scrap:
@@ -249,19 +249,32 @@ class Extract_informations:
                   href = primary_link+self.list_links[url]
                   
                   detail,html_status=self.details(href)
-                  if detail:
+                  if detail and html_status:
                      output=pd.DataFrame(detail,index=[0])
-                     print(output)
+                     print(detail["title"])
                      if output.isna().sum().sum() >10: continue
                      myfile = "homes_not_clean_%s.xlsx"%time.strftime("%B_%d %H_%M_%S")
                      df=pd.concat([df,output],axis=0,ignore_index=True)
                      df.to_excel(myfile,index=None)
-                     if html_status:
-                        if myfile_pre and not del_pre:
-                           os.remove(myfile_pre)
-                           del_pre = True
-                           try:  os.remove(self.name_last_excel(pos=-2))
-                           except: print("file not delete")
+                     
+                     myfile_pre =self.name_last_excel(pos=-2)
+                     if myfile_pre :
+                        os.remove(myfile_pre)
+                           
+                  else:
+                     txt_name=self.name_last_excel(prefix_name="link_total")
+                     
+                     with open(txt_name,"w") as f:
+                           self.list_links.pop(url)
+                           
+                           f.write(" ".join(self.list_links))
+                           f.close()  
+                           
+                     
+                     rand=  default_rng().uniform(1,4) 
+                     print('null request random request time = %d' %rand)    
+                     # time.sleep(rand)
+                     continue
 
                   if random_request:    
                      rand=  default_rng().uniform(random_request[0],random_request[1]) 
@@ -366,7 +379,10 @@ class Extract_informations:
       def name_last_excel(self,prefix_name="homes_not_clean_",pos=-1):
                 files_name=[filename for filename in os.listdir('.') if filename.startswith(prefix_name)]
                 if files_name:
+                  try:
                    return  files_name[pos]
+                  except IndexError:
+                     return None
                 return None
          
       def remove_link(self):
